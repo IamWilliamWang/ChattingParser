@@ -1,22 +1,63 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
+
+class LogUtil {
+
+	public static void print(String print) {
+		printAndLog(print,false);
+	}
+	
+	public static void println() {
+		printAndLog("",true);
+	}
+	
+	public static void println(String print) {
+		printAndLog(print,true);
+	}
+	
+	public static void Log(String string,String fileName) {
+		// TODO Auto-generated method stub
+		Log(string,fileName,false);
+	}
+	
+	public static void Log(String logContent,String fileName,boolean printNextLine) {
+		try {
+			FileWriter fileWriter = new FileWriter(fileName,true);
+			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+			bufferedWriter.write(logContent+(printNextLine?"\n":""));
+			bufferedWriter.flush();
+			bufferedWriter.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private static void printAndLog(String print,boolean printNextLine) {
+		Log(print,Main.logFileName,printNextLine);
+		if(printNextLine)
+			System.out.println(print);
+		else
+			System.out.print(print);
+	}
+}
+
 /**
- * 总类
+ * 分析QQ聊天导出的记录
  * @author william
  */
 public class Main {
 
-	private static String fileName = "friends.txt"; //文件名
+	private static String readFileName = "friends.txt"; //文件名
+	public static String logFileName = "Log.txt"; //日志文件
+	private static String logFileName2 = "FullLog.txt"; //日志文件
 	private ArrayList<Person> personList = new ArrayList<>(); //人物列表
 	private Person thisPerson = new Person(); //此刻操作的人物
 	
@@ -129,7 +170,7 @@ public class Main {
 			else
 				iSend++;
 		}
-		println("发出"+iSend+",接受"+iRecieve+"条消息。发出占比："+relationShipInformation(1.0*iSend/(iSend+iRecieve)));
+		LogUtil.println("发出"+iSend+",接受"+iRecieve+"条消息。发出占比："+relationShipInformation(1.0*iSend/(iSend+iRecieve)));
 		
 		//计算每月记录
 		int[] counts = new int[12];
@@ -139,15 +180,15 @@ public class Main {
 			counts[textContent.date.getMonth()]++;
 		}
 		for(int i=0;i<12;i++)
-			print("["+(i+1)+"月记录"+counts[i]+"条]");
-		println();
+			LogUtil.print("["+(i+1)+"月记录"+counts[i]+"条]");
+		LogUtil.println();
 	}
 	
 	/**
 	 * 统计ThisPerson，子过程
 	 */
 	private void calculateThisPerson() {
-		println(this.thisPerson.消息对象+":"+this.thisPerson.textContent.size());
+		LogUtil.println(this.thisPerson.消息对象+":"+this.thisPerson.textContent.size());
 		calculateRecieveAndSend(this.thisPerson);
 		
 	}
@@ -172,7 +213,7 @@ public class Main {
 		}
 		this.calculateThisPerson();
 		this.clearThisPersonRecord();
-		println("--------------------------------------------------");
+		LogUtil.println("--------------------------------------------------");
 //		this.personList.sort(new Comparator<Person>() {
 //
 //			@Override
@@ -188,7 +229,14 @@ public class Main {
 //		for (Person person : personList) {
 //			System.out.println(this.thisPerson.消息对象+":"+this.thisPerson.textContent.size());
 //		}
-		println("一共"+this.personList.size()+"个人的记录。");
+		LogUtil.println("一共"+this.personList.size()+"个人的记录。");
+	}
+	
+	private void calculateAll(ArrayList<Person> personList) {
+		// TODO Auto-generated method stub
+		CalculateResults calculateResult = new CalculateResults(personList);
+		calculateResult.people.sort(null);
+		LogUtil.Log(calculateResult.toString(),logFileName2);
 	}
 	
 	/**
@@ -196,6 +244,7 @@ public class Main {
 	 * @param bufferedReader
 	 */
 	public void readAllAndCalculate(BufferedReader bufferedReader) {
+		//装载
 		while(true)
 		{
 			try {
@@ -209,44 +258,18 @@ public class Main {
 				e.printStackTrace();
 			}
 		}
+		//分析
 		calculateAll();
+		calculateAll(this.personList);
 	}
-	
-	private void print(String print) {
-		printAndLog(print,false);
-	}
-	
-	private void println() {
-		printAndLog("",true);
-	}
-	
-	private void println(String print) {
-		printAndLog(print,true);
-	}
-	
-	private void printAndLog(String print,boolean printNextLine) {
-		try {
-			FileWriter fileWriter = new FileWriter("log.txt",true);
-			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-			bufferedWriter.write(print+(printNextLine?"\n":""));
-			bufferedWriter.flush();
-			bufferedWriter.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		if(printNextLine)
-			System.out.println(print);
-		else
-			System.out.print(print);
-	}
+
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Main main = new Main();
-		if(args.length==1)	fileName = args[0];
+		if(args.length==1)	logFileName = args[0];
 		try {
-			FileReader fileReader = new FileReader(fileName);
+			FileReader fileReader = new FileReader(readFileName);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			main.readAllAndCalculate(bufferedReader);
 			bufferedReader.close();
